@@ -1,4 +1,7 @@
 #YouTube Data Harvesting and Warehousing using SQL, MongoDB, and Streamlit
+
+
+
 This project demonstrates how to harvest data from YouTube using its API, store it in both SQL and MongoDB databases, and create an interactive Streamlit application for data visualization and analysis.
 
 #Prerequisites
