@@ -34,7 +34,7 @@ with st.sidebar:
 
 # Bridging a connection with MongoDB Atlas and Creating a new database(youtube_data)
 # Replace the following with your MongoDB Atlas connection string
-connection_string = "mongodb+srv://npraveen777raja:mongo@cluster0.exhwak2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+connection_string = ""
 print(connection_string)
 print('HI')
 try:
