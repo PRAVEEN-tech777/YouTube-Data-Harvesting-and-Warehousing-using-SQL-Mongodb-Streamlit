@@ -22,7 +22,7 @@ st.set_page_config(page_title= "Youtube Data Harvesting and Warehousing | By Pra
 
 # CREATING OPTION MENU
 with st.sidebar:
-    selected = option_menu(None, ["Home","Extract and Transform","View"], 
+    selected = option_menu(None, ["Home","Data Harvesting","DataWarehousing","Query Data"], 
                            icons=["house-door-fill","tools","card-text"],
                            default_index=0,
                            orientation="vertical",
@@ -34,12 +34,28 @@ with st.sidebar:
 
 # Bridging a connection with MongoDB Atlas and Creating a new database(youtube_data)
 # Replace the following with your MongoDB Atlas connection string
-connection_string = ""
+#connection_string = "mongodb+srv://npraveen777raja:mongo@cluster0.exhwak2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+connection_string="mongodb://localhost:27017"
 print(connection_string)
 print('HI')
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+
+try:
+    client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=50000, socketTimeoutMS=50000, connectTimeoutMS=50000)
+    # Attempt to retrieve server information
+    client.admin.command('ismaster')
+    print("Connection to MongoDB successful")
+except ConnectionFailure as e:
+    print(f"Could not connect to MongoDB: {e}")
+except ServerSelectionTimeoutError as e:
+    print(f"Server selection timeout: {e}")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
 try:
     # Connect to MongoDB Atlas with SSL certificate verification disabled
-    client = MongoClient(connection_string, tls=True, tlsAllowInvalidCertificates=True)
+    # client = MongoClient(connection_string, tls=True, tlsAllowInvalidCertificates=True)
 
     # Create a new database named 'youtube_data'
     db = client['youtube_data']
@@ -55,9 +71,9 @@ except ServerSelectionTimeoutError as err:
     print("Server selection timeout error:", err)
 except Exception as e:
     print("An error occurred:", e)
-# client = pymongo.MongoClient("mongodb+srv://npraveen777raja:mongo@cluster0.exhwak2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+# client = pymongo.MongoClient("mongodb://localhost:27017")
 # db = client['youtube_data']
-
+#https://www.mongodb.com/try/download/community-kubernetes-operator
 # CONNECTING WITH MYSQL DATABASE
 mydb = sql.connect(host="localhost",
                    user="root",
@@ -67,7 +83,7 @@ mydb = sql.connect(host="localhost",
 mycursor = mydb.cursor(buffered=True)
 
 # BUILDING CONNECTION WITH YOUTUBE API
-api_key = ""
+api_key = "AIzaSyCkglXpsoXo7QjsLDBAL8mzCfX4YZzpdtg"
 youtube = build('youtube','v3',developerKey=api_key)
 
 
@@ -194,9 +210,9 @@ if selected == "Home":
     col2.image("youtubeMain.png")
     
     
-# EXTRACT and TRANSFORM PAGE
-if selected == "Extract and Transform":
-    tab1,tab2 = st.tabs(["$\huge EXTRACT $", "$\huge TRANSFORM $"])
+# Data Harvesting PAGE
+if selected == "Data Harvesting":
+    tab1,tab2 = st.tabs(["$\huge DATA $", "$\huge HARVESTING $"])
     
     # EXTRACT TAB
     with tab1:
@@ -279,7 +295,7 @@ if selected == "Extract and Transform":
                 st.error("Channel details already transformed!!")
             
 # VIEW PAGE
-if selected == "View":
+if selected == "Query Data":
     
     st.write("## :orange[Select any question to get Insights]")
     questions = st.selectbox('Questions',
@@ -296,14 +312,14 @@ if selected == "View":
     '10. Which videos have the highest number of comments, and what are their corresponding channel names?'])
     
     if questions == '1. What are the names of all the videos and their corresponding channels?':
-        mycursor.execute("""SELECT title AS Video_Title, channel_name AS Channel_Name FROM videos ORDER BY channel_name""")
+        mycursor.execute("""SELECT title AS Video_Title, channel_name AS Channel_Name FROM video ORDER BY channel_name""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
         st.write(df)
         
     elif questions == '2. Which channels have the most number of videos, and how many videos do they have?':
         mycursor.execute("""SELECT channel_name 
         AS Channel_Name, total_videos AS Total_Videos
-                            FROM channels
+                            FROM channel
                             ORDER BY total_videos DESC""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
         st.write(df)
@@ -319,7 +335,7 @@ if selected == "View":
         
     elif questions == '3. What are the top 10 most viewed videos and their respective channels?':
         mycursor.execute("""SELECT channel_name AS Channel_Name, title AS Video_Title, views AS Views 
-                            FROM videos
+                            FROM video
                             ORDER BY views DESC
                             LIMIT 10""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
@@ -335,9 +351,9 @@ if selected == "View":
         
     elif questions == '4. How many comments were made on each video, and what are their corresponding video names?':
         mycursor.execute("""SELECT a.video_id AS Video_id, a.title AS Video_Title, b.Total_Comments
-                            FROM videos AS a
+                            FROM video AS a
                             LEFT JOIN (SELECT video_id,COUNT(comment_id) AS Total_Comments
-                            FROM comments GROUP BY video_id) AS b
+                            FROM comment GROUP BY video_id) AS b
                             ON a.video_id = b.video_id
                             ORDER BY b.Total_Comments DESC""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
@@ -345,7 +361,7 @@ if selected == "View":
           
     elif questions == '5. Which videos have the highest number of likes, and what are their corresponding channel names?':
         mycursor.execute("""SELECT channel_name AS Channel_Name,title AS Title,likes AS Likes_Count 
-                            FROM videos
+                            FROM video
                             ORDER BY likes DESC
                             LIMIT 10""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
@@ -361,14 +377,14 @@ if selected == "View":
         
     elif questions == '6. What is the total number of likes and dislikes for each video, and what are their corresponding video names?':
         mycursor.execute("""SELECT title AS Title, likes AS Likes_Count
-                            FROM videos
+                            FROM video
                             ORDER BY likes DESC""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
         st.write(df)
          
     elif questions == '7. What is the total number of views for each channel, and what are their corresponding channel names?':
         mycursor.execute("""SELECT channel_name AS Channel_Name, views AS Views
-                            FROM channels
+                            FROM channel
                             ORDER BY views DESC""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
         st.write(df)
@@ -383,7 +399,7 @@ if selected == "View":
         
     elif questions == '8. What are the names of all the channels that have published videos in the year 2022?':
         mycursor.execute("""SELECT channel_name AS Channel_Name
-                            FROM videos
+                            FROM video
                             WHERE published_date LIKE '2022%'
                             GROUP BY channel_name
                             ORDER BY channel_name""")
@@ -410,7 +426,7 @@ if selected == "View":
                                 WHEN duration REGEXP '^PT[0-9]+S$' THEN 
                                 TIME_TO_SEC(CONCAT('0:0:', SUBSTRING_INDEX(SUBSTRING_INDEX(duration, 'S', 1), 'T', -1)))
                                 END AS duration_sec
-                        FROM videos
+                        FROM video
                         ) AS subquery
                         GROUP BY channel_name""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names
@@ -422,7 +438,7 @@ if selected == "View":
         
     elif questions == '10. Which videos have the highest number of comments, and what are their corresponding channel names?':
         mycursor.execute("""SELECT channel_name AS Channel_Name,video_id AS Video_ID,comments AS Comments
-                            FROM videos
+                            FROM video
                             ORDER BY comments DESC
                             LIMIT 10""")
         df = pd.DataFrame(mycursor.fetchall(),columns=mycursor.column_names)
